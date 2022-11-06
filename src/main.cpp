@@ -21,7 +21,6 @@ void onBrightnessButtonEvent(DigitalInputEvent event);
 void onColorEvent(uint16_t red, uint16_t green, uint16_t blue);
 void onModeButtonEvent(DigitalInputEvent event);
 
-// TODO: Use Preferences.h to save mode and brightness
 void setup() {
   pinMode(BRIGHTNESS_BUTTON_PIN, INPUT_PULLUP);
   pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);

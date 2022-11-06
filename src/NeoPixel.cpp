@@ -9,7 +9,6 @@ NeoPixel::NeoPixel(uint8_t pin):
   if(_lock == NULL) {
     _lock = xSemaphoreCreateMutex();
     if(_lock == NULL) {
-      // TODO: I should throw here...
       log_e("xSemaphoreCreateMutex failed");
       return;
     }
@@ -308,7 +307,7 @@ void NeoPixel::begin() {
 
   _strip.begin();
   _strip.setBrightness(_brightness);
-  _strip.show();  // Initialize all pixels to 'off'
+  _strip.show();
 
   if (_modeTask == NULL) {
     _createModeTask();

@@ -9,7 +9,6 @@ AnalogInput::AnalogInput(uint8_t pin): _pin(pin) {
   if(_lock == NULL) {
     _lock = xSemaphoreCreateMutex();
     if(_lock == NULL) {
-      // TODO: I should throw here...
       log_e("xSemaphoreCreateMutex failed");
       return;
     }
@@ -80,7 +79,6 @@ void AnalogInput::_inputTaskCode(void *args) {
   uint32_t ticksToWait = pdMS_TO_TICKS(10);// portMAX_DELAY;
 
   for(;;) {
-    //ticksToWait = pdMS_TO_TICKS(analogInput->_debounceWindow / 5);
     xTaskNotifyWait(0, ULONG_MAX, &notificationValue, ticksToWait);
     analogInput->_handleInput();
   }

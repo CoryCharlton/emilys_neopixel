@@ -11,7 +11,6 @@ DigitalInput::DigitalInput(uint8_t pin, uint8_t trigger): _pin(pin), _trigger(tr
   if(_lock == NULL) {
     _lock = xSemaphoreCreateMutex();
     if(_lock == NULL) {
-      // TODO: I should throw here...
       log_e("xSemaphoreCreateMutex failed");
       return;
     }
@@ -72,8 +71,6 @@ void DigitalInput::_handleInput() {
   if (!_debounceInput()) {
     return;
   }
-
-  //LockGuard lock (_lock);
 
   if (_currentState == DIGITAL_INPUT_TRIGGERED && _lastState == DIGITAL_INPUT_TRIGGERED) {
     if (_longTriggerWindow > 0 && _triggerStartTime != 0 && millis() - _triggerStartTime >= _longTriggerWindow) {
