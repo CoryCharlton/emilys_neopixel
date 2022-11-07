@@ -4,7 +4,7 @@ const char* NeoPixel::BRIGHTNESS_KEY = "brightness";
 const char* NeoPixel::MODE_KEY = "mode";
 
 NeoPixel::NeoPixel(uint8_t pin): 
-  _strip(32, pin, NEO_GRB + NEO_KHZ800) {
+  _strip(NEOPIXEL_LED_COUNT, pin, NEO_GRB + NEO_KHZ800) {
 
   if(_lock == NULL) {
     _lock = xSemaphoreCreateMutex();
@@ -53,7 +53,6 @@ uint32_t NeoPixel::_getStepMillis() {
     }
     case NeoPixelMode::Rainbow:
     case NeoPixelMode::RainbowWave:
-    case NeoPixelMode::RainbowWheel:
       return 10;
     case NeoPixelMode::TheaterChase:
       return 60;
@@ -96,53 +95,52 @@ void NeoPixel::_handleMode() {
     stepDirection = 1;
 
     _lastMode = _mode;
-    _lastStepTime = 0;
+    _lastStepTime = millis();
   }
 
   color = _strip.Color(_r, _g, _b);
 
+  if (millis() - _lastStepTime >= _getStepMillis()) {
+    _lastStepTime = millis();
+    currentStep += stepDirection;
+  }
+
   switch (_mode)
   {
+    case NeoPixelMode::Off: {
+      esp_light_sleep_start();
+      break;
+    }
     case NeoPixelMode::Rainbow: {
-      if (currentStep >= 768) {
+      if (currentStep >= 256) {
         currentStep = 0;
       }
 
       uint32_t firstPixelHue = currentStep * 256;
 
-      for (int i = 0; i < _strip.numPixels(); i++) {
-        uint32_t pixelHue = firstPixelHue + (i * 65536L / _strip.numPixels());
+      for (int i = 0; i < NEOPIXEL_LED_COUNT; i++) {
+        uint32_t pixelHue = firstPixelHue + (i * 65536L / NEOPIXEL_LED_COUNT);
         _strip.setPixelColor(i, _strip.gamma32(_strip.ColorHSV(pixelHue)));
       }
       
       break;
     }
     case NeoPixelMode::RainbowWave: {
-      if (currentStep >= 768) {
+      if (currentStep >= 256) {
         currentStep = 0;
       }
 
       uint32_t firstPixelHue = currentStep * 256;
 
-      for (int i = 0; i < _strip.numPixels() / 4; i++) {
-        uint32_t pixelHue = firstPixelHue + (i * 65536L / (_strip.numPixels() / 4));
+      for (int i = 0; i < NEOPIXEL_LED_COLS; i++) {
+        uint32_t pixelHue = firstPixelHue + (i * 65536L / NEOPIXEL_LED_COLS);
 
         _strip.setPixelColor(i, _strip.gamma32(_strip.ColorHSV(pixelHue)));
-        _strip.setPixelColor(i + 8, _strip.gamma32(_strip.ColorHSV(pixelHue)));
-        _strip.setPixelColor(i + 16, _strip.gamma32(_strip.ColorHSV(pixelHue)));
-        _strip.setPixelColor(i + 24, _strip.gamma32(_strip.ColorHSV(pixelHue)));
+        _strip.setPixelColor(i + NEOPIXEL_LED_COLS, _strip.gamma32(_strip.ColorHSV(pixelHue)));
+        _strip.setPixelColor(i + NEOPIXEL_LED_COLS * 2, _strip.gamma32(_strip.ColorHSV(pixelHue)));
+        _strip.setPixelColor(i + NEOPIXEL_LED_COLS * 3, _strip.gamma32(_strip.ColorHSV(pixelHue)));
       }
       
-      break;
-    }
-    case NeoPixelMode::RainbowWheel: {
-      if (currentStep >= 256 * 5) {
-        currentStep = 0;
-      }
-
-      for(int i = 0; i < _strip.numPixels(); i++) {
-        _strip.setPixelColor(i, _getWheelColor(((i * 256 / _strip.numPixels()) + currentStep) & 255));
-      }
       break;
     }
     case NeoPixelMode::Solid: {
@@ -156,52 +154,54 @@ void NeoPixel::_handleMode() {
 
       _strip.clear();
 
-      for (int i = currentStep; i < _strip.numPixels(); i += 3) {
+      for (int i = currentStep; i < NEOPIXEL_LED_COUNT; i += 3) {
         _strip.setPixelColor(i, color);
       }
       
       break;
     }
     case NeoPixelMode::TheaterChaseRainbow: {
-      if (currentStep >= 768) {
+      if (currentStep >= 256) {
         currentStep = 0;
       }
 
       _strip.clear();
 
-      uint8_t firstPixel = abs(currentStep) % 4;
-      uint32_t firstPixelHue = abs(currentStep) * 256;
+      uint8_t firstPixel = currentStep % NEOPIXEL_LED_ROWS;
+      uint32_t firstPixelHue = currentStep * 256;
 
-      for (int i = firstPixel; i < _strip.numPixels(); i += 3) {
-        uint32_t pixelHue = firstPixelHue + (i * 65536L / _strip.numPixels());
+      for (int i = firstPixel; i < NEOPIXEL_LED_COUNT; i += 3) {
+        uint32_t pixelHue = firstPixelHue + (i * 65536L / NEOPIXEL_LED_COUNT);
         _strip.setPixelColor(i, _strip.gamma32(_strip.ColorHSV(pixelHue)));
       }
       
       break;
     }
     case NeoPixelMode::WipeHorizontal: {
-      if (currentStep >= 7) {
+      if (currentStep >= NEOPIXEL_LED_COLS - 1) {
         stepDirection = -1;
       } else if (currentStep <= 0) {
         stepDirection = 1;
       }
       
-      for(int i = 0; i < _strip.numPixels(); i++) {
-        _strip.setPixelColor(i, i == currentStep || i == currentStep + 8 || i == currentStep + 16 || i == currentStep + 24 ? 0 : color);
-      }
+      _strip.fill(color);
+      _strip.setPixelColor(currentStep, 0);
+      _strip.setPixelColor(currentStep + NEOPIXEL_LED_COLS, 0);
+      _strip.setPixelColor(currentStep + NEOPIXEL_LED_COLS * 2, 0);
+      _strip.setPixelColor(currentStep + NEOPIXEL_LED_COLS * 3, 0);
       break;
     }
     case NeoPixelMode::WipeVertical: {
-      if (currentStep >= 3) {
+      if (currentStep >= NEOPIXEL_LED_ROWS - 1) {
         stepDirection = -1;
       } else if (currentStep <= 0) {
         stepDirection = 1;
       }
       
-      uint16_t firstLed = currentStep * 8;
-      uint16_t lastLed = firstLed + 7;
+      uint16_t firstLed = currentStep * NEOPIXEL_LED_COLS;
+      uint16_t lastLed = firstLed + NEOPIXEL_LED_COLS - 1;
 
-      for(int i = 0; i < _strip.numPixels(); i++) {
+      for(int i = 0; i < NEOPIXEL_LED_COUNT; i++) {
         _strip.setPixelColor(i, i >= firstLed && i <= lastLed ? 0 : color);
       }
       break;
@@ -213,11 +213,6 @@ void NeoPixel::_handleMode() {
 
   _strip.setBrightness(_brightness);
   _strip.show();
-
-  if (millis() - _lastStepTime >= _getStepMillis()) {
-    _lastStepTime = millis();
-    currentStep += stepDirection;
-  }
 }
 
 void NeoPixel::_modeTaskCode(void *args) {
@@ -297,7 +292,9 @@ void NeoPixel::_setMode(NeoPixelMode mode, bool update) {
 
     _mode = mode;
 
-    if (_mode != NeoPixelMode::Off) {
+    if (_mode == NeoPixelMode::Off) {
+      _preferences.putUChar(MODE_KEY, (uint8_t) NEOPIXEL_DEFAULT_MODE);
+    } else {
       _preferences.putUChar(MODE_KEY, (uint8_t) _mode);
     }
   }
@@ -314,7 +311,7 @@ void NeoPixel::begin() {
   _mode = (NeoPixelMode) _preferences.getUChar(MODE_KEY, 0);
 
   if (_mode == NeoPixelMode::Off) {
-    _mode = NeoPixelMode::Solid;
+    _mode = (NeoPixelMode) NEOPIXEL_DEFAULT_MODE;
   }
 
   _strip.begin();
@@ -338,7 +335,7 @@ void NeoPixel::nextBrightness() {
 void NeoPixel::nextMode() {
   uint8_t mode = (uint8_t) _mode;
   mode++;
-  if (mode > NEOPIXEL_MAX_NEOPIXEL_MODE) {
+  if (mode > NEOPIXEL_MAX_MODE) {
     mode = 0;
   }
 

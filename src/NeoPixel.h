@@ -11,9 +11,6 @@
 #define NEOPIXEL_MODE_TASK_PRIORITY (configMAX_PRIORITIES-1)
 #define NEOPIXEL_MODE_TASK_STACK_SIZE 2048
 
-#define NEOPIXEL_BRIGHTNESS_STEP 50
-#define NEOPIXEL_STEP_MILLIS 50
-
 enum class NeoPixelMode: uint8_t {
     Off = 0,
     Solid = 1,
@@ -22,11 +19,16 @@ enum class NeoPixelMode: uint8_t {
     TheaterChase = 4,
     Rainbow = 5,
     RainbowWave = 6,
-    RainbowWheel = 7,
-    TheaterChaseRainbow = 8,
+    TheaterChaseRainbow = 7,
 };
 
-#define NEOPIXEL_MAX_NEOPIXEL_MODE 8
+#define NEOPIXEL_BRIGHTNESS_STEP 50
+#define NEOPIXEL_DEFAULT_MODE 1
+#define NEOPIXEL_LED_COLS 8
+#define NEOPIXEL_LED_COUNT 32
+#define NEOPIXEL_LED_ROWS 4
+#define NEOPIXEL_MAX_MODE 7
+#define NEOPIXEL_STEP_MILLIS 50
 
 class NeoPixel {
   public:
@@ -44,13 +46,13 @@ class NeoPixel {
 
   private:
     uint8_t _brightness = NEOPIXEL_BRIGHTNESS_STEP;
-    uint8_t _r= 0;
+    uint8_t _r = 0;
     uint8_t _g = 0;
     uint8_t _b = 0;
     NeoPixelMode _lastMode;
     uint32_t _lastStepTime = 0;
     SemaphoreHandle_t _lock;
-    NeoPixelMode _mode = NeoPixelMode::Solid;
+    NeoPixelMode _mode = (NeoPixelMode) NEOPIXEL_DEFAULT_MODE;
     TaskHandle_t _modeTask;
     Preferences _preferences;
     Adafruit_NeoPixel _strip;

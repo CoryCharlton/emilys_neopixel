@@ -25,6 +25,8 @@ void setup() {
   pinMode(BRIGHTNESS_BUTTON_PIN, INPUT_PULLUP);
   pinMode(MODE_BUTTON_PIN, INPUT_PULLUP);
 
+  esp_sleep_enable_ext0_wakeup((gpio_num_t) MODE_BUTTON_PIN, LOW);
+  
   analogReadResolution(8);
 
   brightnessButton.begin();
@@ -60,6 +62,6 @@ void onModeButtonEvent(DigitalInputEvent event) {
   if (event != DigitalInputEvent::Trigger) {
     return;
   }
-
+  
   neoPixel.nextMode();
 }
