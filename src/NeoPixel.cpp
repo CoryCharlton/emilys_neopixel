@@ -100,7 +100,6 @@ void NeoPixel::_handleMode() {
   }
 
   color = _strip.Color(_r, _g, _b);
-  color = _strip.gamma32(color);
 
   switch (_mode)
   {
@@ -251,6 +250,8 @@ void NeoPixel::_setBrightness(uint16_t brightness, bool update) {
       brightness = NEOPIXEL_BRIGHTNESS_STEP;
     }
 
+    log_d("Brightness: %d", brightness);
+
     if (_brightness == brightness) {
       return;
     }
@@ -272,6 +273,8 @@ void NeoPixel::_setColor(uint8_t r, uint8_t g, uint8_t b, bool update) {
       return;
     }
   
+    log_d("Color: %d %d %d", r, g, b);
+
     _r = r;
     _g = g;
     _b = b;
@@ -289,6 +292,8 @@ void NeoPixel::_setMode(NeoPixelMode mode, bool update) {
     if (_mode == mode) {
       return;
     }
+
+    log_d("Mode: %d", mode);
 
     _mode = mode;
     _preferences.putUChar(MODE_KEY, (uint8_t) _mode);
