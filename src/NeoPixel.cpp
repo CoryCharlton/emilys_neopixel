@@ -296,7 +296,10 @@ void NeoPixel::_setMode(NeoPixelMode mode, bool update) {
     log_d("Mode: %d", mode);
 
     _mode = mode;
-    _preferences.putUChar(MODE_KEY, (uint8_t) _mode);
+
+    if (_mode != NeoPixelMode::Off) {
+      _preferences.putUChar(MODE_KEY, (uint8_t) _mode);
+    }
   }
 
   if (update) {
@@ -309,6 +312,10 @@ void NeoPixel::begin() {
 
   _brightness = _preferences.getUChar(BRIGHTNESS_KEY, NEOPIXEL_BRIGHTNESS_STEP);
   _mode = (NeoPixelMode) _preferences.getUChar(MODE_KEY, 0);
+
+  if (_mode == NeoPixelMode::Off) {
+    _mode = NeoPixelMode::Solid;
+  }
 
   _strip.begin();
   _strip.setBrightness(_brightness);
